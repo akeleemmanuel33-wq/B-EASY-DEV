@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B-Easy - Expenses</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+            color: #333;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        body.loaded {
+            opacity: 1;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-logout {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #ee5a6f;
+        }
+
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 70px);
+        }
+
+        .sidebar {
+            width: 260px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+            padding: 2rem 0;
+            transition: all 0.3s;
+        }
+
+        .sidebar.mobile-hidden {
+            transform: translateX(-100%);
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin: 0.3rem 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 2rem;
+            color: #666;
+            text-decoration: none;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: #f8f9fa;
+            color: #667eea;
+            border-left: 4px solid #667eea;
+        }
+
+        .nav-link.active {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.1) 0%, rgba(255,255,255,0) 100%);
+            color: #667eea;
+            border-left: 4px solid #667eea;
+        }
+
+        .nav-icon {
+            font-size: 1.3rem;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            max-width: 100%;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            color: #333;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.9rem 1.8rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Financial Overview */
+        .financial-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .finance-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid #667eea;
+        }
+
+        .finance-card.revenue {
+            border-left-color: #28a745;
+        }
+
+        .finance-card.expenses {
+            border-left-color: #ff4757;
+        }
+
+        .finance-card.profit {
+            border-left-color: #667eea;
+        }
+
+        .finance-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .finance-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+
+        .finance-value.positive {
+            color: #28a745;
+        }
+
+        .finance-value.negative {
+            color: #ff4757;
+        }
+
+        .finance-value.neutral {
+            color: #667eea;
+        }
+
+        .finance-change {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 0.5rem;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .filter-input, .filter-select {
+            padding: 0.8rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-filter {
+            padding: 0.8rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-filter:hover {
+            background: #5568d3;
+        }
+
+        /* Expenses Container */
+        .expenses-container {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .expenses-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .expense-item {
+            background: #f8f9fa;
+            padding: 1.2rem;
+            border-radius: 10px;
+            border-left: 4px solid #ff4757;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .expense-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .expense-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .expense-category {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .expense-description {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .expense-meta {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: #999;
+            flex-wrap: wrap;
+        }
+
+        .expense-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+
+        .expense-amount {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #ff4757;
+        }
+
+        .expense-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .btn-delete {
+            background: #ff4757;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #ee5a6f;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: #f0f0f0;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.9rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+        }
+
+        .category-option {
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .category-option:hover {
+            border-color: #667eea;
+        }
+
+        .category-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .category-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-text {
+            color: #999;
+            margin-bottom: 2rem;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: block;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 70px;
+                height: calc(100vh - 70px);
+                z-index: 99;
+                box-shadow: 5px 0 20px rgba(0,0,0,0.2);
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .btn-primary {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .financial-overview {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-row {
+                grid-template-columns: 1fr;
+            }
+
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .expense-item {
+                grid-template-columns: 1fr;
+            }
+
+            .expense-right {
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+            <a href="dashboard.html" class="logo">
+                <span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M14 21H16M14 21C13.1716 21 12.5 20.3284 12.5 19.5V17L12 17M14 21H10M10 21H8M10 21C10.8284 21 11.5 20.3284 11.5 19.5V17L12 17M12 17V21" />
+‎    <path d="M16 3H8C5.17157 3 3.75736 3 2.87868 3.87868C2 4.75736 2 6.17157 2 9V11C2 13.8284 2 15.2426 2.87868 16.1213C3.75736 17 5.17157 17 8 17H16C18.8284 17 20.2426 17 21.1213 16.1213C22 15.2426 22 13.8284 22 11V9C22 6.17157 22 4.75736 21.1213 3.87868C20.2426 3 18.8284 3 16 3Z" />
+‎    <path d="M16 8L13.5 10.5C13.2274 10.7726 13.0911 10.9089 12.944 10.9818C12.6642 11.1204 12.3358 11.1204 12.056 10.9818C11.9089 10.9089 11.7726 10.7726 11.5 10.5C11.2274 10.2274 11.0911 10.0911 10.944 10.0182C10.6642 9.87955 10.3358 9.87955 10.056 10.0182C9.90894 10.0911 9.77262 10.2274 9.5 10.5L7 13M14 7H15.7143C16.3204 7 16.6234 7 16.8117 7.18829C17 7.37658 17 7.67962 17 8.28571V10" />
+‎</svg>
+                </span>
+                <span>B-Easy</span>
+            </a>
+        </div>
+        <div class="header-right">
+            <button class="btn-logout" onclick="handleLogout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <aside class="sidebar mobile-hidden" id="sidebar">
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a href="dashboard.html" class="nav-link">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="#141B34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M14 16V8C14 7.05719 14 6.58579 13.7071 6.29289C13.4142 6 12.9428 6 12 6C11.0572 6 10.5858 6 10.2929 6.29289C10 6.58579 10 7.05719 10 8V16C10 16.9428 10 17.4142 10.2929 17.7071C10.5858 18 11.0572 18 12 18C12.9428 18 13.4142 18 13.7071 17.7071C14 17.4142 14 16.9428 14 16Z" />
+‎    <path d="M21 9V7C21 6.05719 21 5.58579 20.7071 5.29289C20.4142 5 19.9428 5 19 5C18.0572 5 17.5858 5 17.2929 5.29289C17 5.58579 17 6.05719 17 7V9C17 9.94281 17 10.4142 17.2929 10.7071C17.5858 11 18.0572 11 19 11C19.9428 11 20.4142 11 20.7071 10.7071C21 10.4142 21 9.94281 21 9Z" />
+‎    <path d="M7 14V12C7 11.0572 7 10.5858 6.70711 10.2929C6.41421 10 5.94281 10 5 10C4.05719 10 3.58579 10 3.29289 10.2929C3 10.5858 3 11.0572 3 12V14C3 14.9428 3 15.4142 3.29289 15.7071C3.58579 16 4.05719 16 5 16C5.94281 16 6.41421 16 6.70711 15.7071C7 15.4142 7 14.9428 7 14Z" />
+‎    <path d="M12 21L12 18" />
+‎    <path d="M19 13L19 11" />
+‎    <path d="M12 6L12 3" />
+‎    <path d="M19 5L19 3" />
+‎    <path d="M5 18L5 16" />
+‎    <path d="M5 10L5 8" />
+‎</svg>
+                            </span>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="customer.html" class="nav-link">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M5.52001 3.00001C4.69617 3.00001 4.02832 3.6718 4.02832 4.50049C4.02832 5.32918 4.69617 6.00097 5.52001 6.00097C6.34385 6.00097 7.0117 5.32918 7.0117 4.50049C7.0117 3.6718 6.34385 3.00001 5.52001 3.00001Z" /> <path d="M18.4821 21.0002H16.7038C16.4972 21.0002 16.2898 20.97 16.1001 20.8852C15.4826 20.6091 15.1693 20.2446 15.0233 20.0165C14.9402 19.8867 14.9521 19.7215 15.0422 19.5969C15.7576 18.6081 17.4164 18.0108 18.4821 18.0108M18.4852 21.0002H20.2635C20.4701 21.0002 20.6775 20.97 20.8672 20.8852C21.4847 20.6091 21.798 20.2446 21.944 20.0165C22.0271 19.8867 22.0153 19.7215 21.9251 19.5969C21.2097 18.6081 19.5509 18.0108 18.4852 18.0108" /> <path d="M5.51485 11.4924H3.73649C3.52995 11.4924 3.32254 11.4622 3.13284 11.3774C2.51533 11.1013 2.20203 10.7367 2.05602 10.5087C1.97294 10.3789 1.98477 10.2136 2.07491 10.0891C2.79035 9.10026 4.44914 8.50299 5.51485 8.50294M5.51789 11.4924H7.29625C7.50279 11.4924 7.7102 11.4622 7.8999 11.3774C8.51741 11.1013 8.83071 10.7367 8.97672 10.5087C9.0598 10.3789 9.04797 10.2136 8.95783 10.0891C8.24239 9.10026 6.5836 8.50299 5.51789 8.50294" /> <path d="M11.4868 4.00001C14.2995 4.00001 16.7004 4.00001 17.5742 4.87897C18.448 5.75793 18.448 6.67243 18.448 9.50177L16.4591 8.50145" /> <path d="M11.9842 20.0057C9.1714 20.0057 6.77057 20.0057 5.89676 19.1267C5.02295 18.2477 5.02295 17.3332 5.02295 14.5039L7.01187 15.5042" /> <path d="M18.4477 12.5029C17.6239 12.5029 16.9561 13.1748 16.9561 14.0034C16.9561 14.8321 17.6239 15.5039 18.4477 15.5039C19.2716 15.5039 19.9394 14.8321 19.9394 14.0034C19.9394 13.1748 19.2716 12.5029 18.4477 12.5029Z" /> </svg>
+                            </span>
+                            <span>Customers</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="invoice.html" class="nav-link">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="#141B34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M14.4998 13.501C14.4998 14.8817 13.3805 16.001 11.9998 16.001C10.619 16.001 9.49976 14.8817 9.49976 13.501C9.49976 12.1203 10.619 11.001 11.9998 11.001C13.3805 11.001 14.4998 12.1203 14.4998 13.501Z" />
+‎    <path d="M17.5 6.5498C19.1831 6.66255 20.3941 6.94811 21.1329 7.17709C21.6756 7.34528 22 7.85966 22 8.42782V18.1831C22 19.2982 20.7719 20.1372 19.6762 19.9303C18.7361 19.7528 17.5107 19.6101 16 19.6101C11.2491 19.6101 10.1096 21.4158 3.1448 19.88C2.47265 19.7318 2 19.1273 2 18.439V8.42193C2 7.44607 2.92079 6.73443 3.87798 6.92437C4.86572 7.12037 5.72897 7.24475 6.5 7.3151" />
+‎    <path d="M2 10.501C3.95133 10.501 5.70483 8.90605 5.92901 7.25514M18.5005 7.00098C18.5005 9.04062 20.2655 10.97 22 10.97M22 16.501C20.1009 16.501 18.2601 17.8112 18.102 19.5993M6.00049 19.9971C6.00049 17.7879 4.20963 15.9971 2.00049 15.9971" />
+‎    <path d="M12 7.50098V3.50098M15 7.50098V5.50098M9 7.50098V5.50098" />
+‎</svg>
+                            </span>
+                            <span>Invoices</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="record.html" class="nav-link">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="#141B34" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M14.4998 13.501C14.4998 14.8817 13.3805 16.001 11.9998 16.001C10.619 16.001 9.49976 14.8817 9.49976 13.501C9.49976 12.1203 10.619 11.001 11.9998 11.001C13.3805 11.001 14.4998 12.1203 14.4998 13.501Z" />
+‎    <path d="M17.5 6.5498C19.1831 6.66255 20.3941 6.94811 21.1329 7.17709C21.6756 7.34528 22 7.85966 22 8.42782V18.1831C22 19.2982 20.7719 20.1372 19.6762 19.9303C18.7361 19.7528 17.5107 19.6101 16 19.6101C11.2491 19.6101 10.1096 21.4158 3.1448 19.88C2.47265 19.7318 2 19.1273 2 18.439V8.42193C2 7.44607 2.92079 6.73443 3.87798 6.92437C4.86572 7.12037 5.72897 7.24475 6.5 7.3151" />
+‎    <path d="M2 10.501C3.95133 10.501 5.70483 8.90605 5.92901 7.25514M18.5005 7.00098C18.5005 9.04062 20.2655 10.97 22 10.97M22 16.501C20.1009 16.501 18.2601 17.8112 18.102 19.5993M6.00049 19.9971C6.00049 17.7879 4.20963 15.9971 2.00049 15.9971" />
+‎    <path d="M12 7.50098V3.50098M15 7.50098V5.50098M9 7.50098V5.50098" />
+‎</svg>
+                            </span>
+                            <span>Sales</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="report.html" class="nav-link">
+                            <span class="nav-icon"> <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M2 21H22" />
+‎    <path d="M4 18L4 15" />
+‎    <path d="M8 14L8 9" />
+‎    <path d="M12 11L12 9" />
+‎    <path d="M16 11L16 5" />
+‎    <path d="M20 5L20 3" />
+‎</svg></span>
+                            <span>Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" class="nav-link active">
+                            <span class="nav-icon">💸</span>
+                            <span>Expenses</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="setting.html" class="nav-link">
+                            <span class="nav-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+‎    <path d="M21.3175 7.14139L20.8239 6.28479C20.4506 5.63696 20.264 5.31305 19.9464 5.18388C19.6288 5.05472 19.2696 5.15664 18.5513 5.36048L17.3311 5.70418C16.8725 5.80994 16.3913 5.74994 15.9726 5.53479L15.6357 5.34042C15.2766 5.11043 15.0004 4.77133 14.8475 4.37274L14.5136 3.37536C14.294 2.71534 14.1842 2.38533 13.9228 2.19657C13.6615 2.00781 13.3143 2.00781 12.6199 2.00781H11.5051C10.8108 2.00781 10.4636 2.00781 10.2022 2.19657C9.94085 2.38533 9.83106 2.71534 9.61149 3.37536L9.27753 4.37274C9.12465 4.77133 8.84845 5.11043 8.48937 5.34042L8.15249 5.53479C7.73374 5.74994 7.25259 5.80994 6.79398 5.70418L5.57375 5.36048C4.85541 5.15664 4.49625 5.05472 4.17867 5.18388C3.86109 5.31305 3.67445 5.63696 3.30115 6.28479L2.80757 7.14139C2.45766 7.74864 2.2827 8.05227 2.31666 8.37549C2.35061 8.69871 2.58483 8.95918 3.05326 9.48012L4.0843 10.6328C4.3363 10.9518 4.51521 11.5078 4.51521 12.0077C4.51521 12.5078 4.33636 13.0636 4.08433 13.3827L3.05326 14.5354C2.58483 15.0564 2.35062 15.3168 2.31666 15.6401C2.2827 15.9633 2.45766 16.2669 2.80757 16.8741L3.30114 17.7307C3.67443 18.3785 3.86109 18.7025 4.17867 18.8316C4.49625 18.9608 4.85542 18.8589 5.57377 18.655L6.79394 18.3113C7.25263 18.2055 7.73387 18.2656 8.15267 18.4808L8.4895 18.6752C8.84851 18.9052 9.12464 19.2442 9.2775 19.6428L9.61149 20.6403C9.83106 21.3003 9.94085 21.6303 10.2022 21.8191C10.4636 22.0078 10.8108 22.0078 11.5051 22.0078H12.6199C13.3143 22.0078 13.6615 22.0078 13.9228 21.8191C14.1842 21.6303 14.294 21.3003 14.5136 20.6403L14.8476 19.6428C15.0004 19.2442 15.2765 18.9052 15.6356 18.6752L15.9724 18.4808C16.3912 18.2656 16.8724 18.2055 17.3311 18.3113L18.5513 18.655C19.2696 18.8589 19.6288 18.9608 19.9464 18.8316C20.264 18.7025 20.4506 18.3785 20.8239 17.7307L21.3175 16.8741C21.6674 16.2669 21.8423 15.9633 21.8084 15.6401C21.7744 15.3168 21.5402 15.0564 21.0718 14.5354L20.0407 13.3827C19.7887 13.0636 19.6098 12.5078 19.6098 12.0077C19.6098 11.5078 19.7888 10.9518 20.0407 10.6328L21.0718 9.48012C21.5402 8.95918 21.7744 8.69871 21.8084 8.37549C21.8423 8.05227 21.6674 7.74864 21.3175 7.14139Z" />
+‎    <path d="M15.5195 12C15.5195 13.933 13.9525 15.5 12.0195 15.5C10.0865 15.5 8.51953 13.933 8.51953 12C8.51953 10.067 10.0865 8.5 12.0195 8.5C13.9525 8.5 15.5195 10.067 15.5195 12Z" />
+‎</svg>
+                            </span>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div id="alertBox" class="alert"></div>
+
+            <div class="page-header">
+                <h1 class="page-title">Expenses</h1>
+                <button class="btn-primary" onclick="openAddModal()">
+                    <span>
+                        ‎<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12Z" />
+‎    <path d="M12 8V16M16 12H8" />
+‎</svg>
+                    </span>
+                    <span>Add Expense</span>
+                </button>
+            </div>
+
+            <!-- Financial Overview -->
+            <div class="financial-overview">
+                <div class="finance-card revenue">
+                    <div class="finance-label">Total Revenue</div>
+                    <div class="finance-value positive" id="totalRevenue">₦0</div>
+                    <div class="finance-change">From sales this month</div>
+                </div>
+
+                <div class="finance-card expenses">
+                    <div class="finance-label">Total Expenses</div>
+                    <div class="finance-value negative" id="totalExpenses">₦0</div>
+                    <div class="finance-change">Total costs this month</div>
+                </div>
+
+                <div class="finance-card profit">
+                    <div class="finance-label">Net Profit</div>
+                    <div class="finance-value neutral" id="netProfit">₦0</div>
+                    <div class="finance-change" id="profitMargin">0% profit margin</div>
+                </div>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label class="filter-label">Start Date</label>
+                        <input type="date" class="filter-input" id="startDate">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">End Date</label>
+                        <input type="date" class="filter-input" id="endDate">
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Category</label>
+                        <select class="filter-select" id="filterCategory">
+                            <option value="">All Categories</option>
+                            <option value="rent">Rent</option>
+                            <option value="utilities">Utilities</option>
+                            <option value="inventory">Inventory</option>
+                            <option value="salary">Salary</option>
+                            <option value="marketing">Marketing</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <button class="btn-filter" onclick="applyFilters()">Apply Filter</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses List -->
+            <div class="expenses-container">
+                <div id="expensesList" class="expenses-list">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Expense Modal -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Expense</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="expenseForm" onsubmit="handleSubmit(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Amount (₦) *</label>
+                        <input type="number" class="form-input" id="expenseAmount" placeholder="0.00" min="0" step="0.01" required autofocus>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Category *</label>
+                        <div class="category-grid">
+                            <div class="category-option selected" onclick="selectCategory('rent')" data-category="rent">
+                                <div class="category-icon">
+                                    ‎<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M13.5 19.5V11.5C13.5 10.5572 13.5 10.0858 13.2071 9.79289C12.9142 9.5 12.4428 9.5 11.5 9.5C10.5572 9.5 10.0858 9.5 9.79289 9.79289C9.5 10.0858 9.5 10.5572 9.5 11.5V19.5C9.5 20.4428 9.5 20.9142 9.79289 21.2071C10.0858 21.5 10.5572 21.5 11.5 21.5C12.4428 21.5 12.9142 21.5 13.2071 21.2071C13.5 20.9142 13.5 20.4428 13.5 19.5Z" />
+‎    <path d="M20.5 12.5V19.5C20.5 20.4428 20.5 20.9142 20.2071 21.2071C19.9142 21.5 19.4428 21.5 18.5 21.5C17.5572 21.5 17.0858 21.5 16.7929 21.2071C16.5 20.9142 16.5 20.4428 16.5 19.5V12.5" />
+‎    <path d="M17.4375 9.16667L17.4375 3.83333M19 3.83333V2.5M19 10.5V9.16667M17.4375 6.5H20.5625M20.5625 6.5C21.0803 6.5 21.5 6.94772 21.5 7.5V8.16667C21.5 8.71895 21.0803 9.16667 20.5625 9.16667H16.5M20.5625 6.5C21.0803 6.5 21.5 6.05228 21.5 5.5V4.83333C21.5 4.28105 21.0803 3.83333 20.5625 3.83333H16.5" />
+‎    <path d="M6.5 19.5V14.5C6.5 13.5572 6.5 13.0858 6.20711 12.7929C5.91421 12.5 5.44281 12.5 4.5 12.5C3.55719 12.5 3.08579 12.5 2.79289 12.7929C2.5 13.0858 2.5 13.5572 2.5 14.5V19.5C2.5 20.4428 2.5 20.9142 2.79289 21.2071C3.08579 21.5 3.55719 21.5 4.5 21.5C5.44281 21.5 5.91421 21.5 6.20711 21.2071C6.5 20.9142 6.5 20.4428 6.5 19.5Z" />
+‎</svg>
+‎
+                                </div>
+                                <div>Rent</div>
+                            </div>
+                            <div class="category-option" onclick="selectCategory('utilities')" data-category="utilities">
+                                <div class="category-icon">
+                                    ‎<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M13.5 19.5V11.5C13.5 10.5572 13.5 10.0858 13.2071 9.79289C12.9142 9.5 12.4428 9.5 11.5 9.5C10.5572 9.5 10.0858 9.5 9.79289 9.79289C9.5 10.0858 9.5 10.5572 9.5 11.5V19.5C9.5 20.4428 9.5 20.9142 9.79289 21.2071C10.0858 21.5 10.5572 21.5 11.5 21.5C12.4428 21.5 12.9142 21.5 13.2071 21.2071C13.5 20.9142 13.5 20.4428 13.5 19.5Z" />
+‎    <path d="M20.5 12.5V19.5C20.5 20.4428 20.5 20.9142 20.2071 21.2071C19.9142 21.5 19.4428 21.5 18.5 21.5C17.5572 21.5 17.0858 21.5 16.7929 21.2071C16.5 20.9142 16.5 20.4428 16.5 19.5V12.5" />
+‎    <path d="M17.4375 9.16667L17.4375 3.83333M19 3.83333V2.5M19 10.5V9.16667M17.4375 6.5H20.5625M20.5625 6.5C21.0803 6.5 21.5 6.94772 21.5 7.5V8.16667C21.5 8.71895 21.0803 9.16667 20.5625 9.16667H16.5M20.5625 6.5C21.0803 6.5 21.5 6.05228 21.5 5.5V4.83333C21.5 4.28105 21.0803 3.83333 20.5625 3.83333H16.5" />
+‎    <path d="M6.5 19.5V14.5C6.5 13.5572 6.5 13.0858 6.20711 12.7929C5.91421 12.5 5.44281 12.5 4.5 12.5C3.55719 12.5 3.08579 12.5 2.79289 12.7929C2.5 13.0858 2.5 13.5572 2.5 14.5V19.5C2.5 20.4428 2.5 20.9142 2.79289 21.2071C3.08579 21.5 3.55719 21.5 4.5 21.5C5.44281 21.5 5.91421 21.5 6.20711 21.2071C6.5 20.9142 6.5 20.4428 6.5 19.5Z" />
+‎</svg>
+‎
+                                </div>
+                                <div>Utilities</div>
+                            </div>
+                            <div class="category-option" onclick="selectCategory('inventory')" data-category="inventory">
+                                <div class="category-icon">
+                                    ‎<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M12 22C11.1818 22 10.4002 21.6698 8.83693 21.0095C4.94564 19.3657 3 18.5438 3 17.1613C3 16.7742 3 10.0645 3 7M12 22C12.8182 22 13.5998 21.6698 15.1631 21.0095C19.0544 19.3657 21 18.5438 21 17.1613V7M12 22L12 11.3548" />
+‎    <path d="M8.32592 9.69138L5.40472 8.27785C3.80157 7.5021 3 7.11423 3 6.5C3 5.88577 3.80157 5.4979 5.40472 4.72215L8.32592 3.30862C10.1288 2.43621 11.0303 2 12 2C12.9697 2 13.8712 2.4362 15.6741 3.30862L18.5953 4.72215C20.1984 5.4979 21 5.88577 21 6.5C21 7.11423 20.1984 7.5021 18.5953 8.27785L15.6741 9.69138C13.8712 10.5638 12.9697 11 12 11C11.0303 11 10.1288 10.5638 8.32592 9.69138Z" />
+‎    <path d="M6 12L8 13" />
+‎    <path d="M17 4L7 9" />
+‎</svg>
+                                </div>
+                                <div>Inventory</div>
+                            </div>
+                            <div class="category-option" onclick="selectCategory('salary')" data-category="salary">
+                                <div class="category-icon">
+                            ‎<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M20 22V19C20 17.1144 20 16.1716 19.4142 15.5858C18.8284 15 17.8856 15 16 15H14L12 17L10 15H8C6.11438 15 5.17157 15 4.58579 15.5858C4 16.1716 4 17.1144 4 19V22" />
+‎    <path d="M16 15V22" />
+‎    <path d="M8 15V22" />
+‎    <path d="M15.5 9V7C15.5 5.067 13.933 3.5 12 3.5C10.067 3.5 8.5 5.067 8.5 7V9C8.5 10.933 10.067 12.5 12 12.5C13.933 12.5 15.5 10.933 15.5 9Z" />
+‎    <path d="M7.5 7.5H16.5" />
+‎    <path d="M12 2V3.5" />
+‎</svg>       
+                                </div>
+                                <div>Salary</div>
+                            </div>
+                            <div class="category-option" onclick="selectCategory('marketing')" data-category="marketing">
+                                <div class="category-icon">
+                                    ‎<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+‎    <path d="M20.5 13.5V10.5C20.5 6.74142 20.5 4.86213 19.4472 3.60746C19.2788 3.40678 19.0932 3.22119 18.8925 3.0528C17.6379 2 15.7586 2 12 2C8.24142 2 6.36213 2 5.10746 3.0528C4.90678 3.22119 4.72119 3.40678 4.5528 3.60746C3.5 4.86213 3.5 6.74142 3.5 10.5V13.5C3.5 17.2586 3.5 19.1379 4.5528 20.3925C4.72119 20.5932 4.90678 20.7788 5.10746 20.9472C6.36213 22 8.24142 22 12 22C15.7586 22 17.6379 22 18.8925 20.9472C19.0932 20.7788 19.2788 20.5932 19.4472 20.3925C20.5 19.1379 20.5 17.2586 20.5 13.5Z" />
+‎    <path d="M15.5 15C15.5 16.933 13.933 18.5 12 18.5C10.067 18.5 8.5 16.933 8.5 15C8.5 13.067 10.067 11.5 12 11.5C13.933 11.5 15.5 13.067 15.5 15Z" />
+‎    <path d="M13.5 7C13.5 7.82843 12.8284 8.5 12 8.5C11.1716 8.5 10.5 7.82843 10.5 7C10.5 6.17157 11.1716 5.5 12 5.5C12.8284 5.5 13.5 6.17157 13.5 7Z" />
+‎</svg>
+                                </div>
+                                <div>Marketing</div>
+                            </div>
+                            <div class="category-option" onclick="selectCategory('other')" data-category="other">
+                                <div class="category-icon">
+                                    ‎<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="currentColor" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+‎    <path d="M5.33333 3.00001C7.79379 2.99657 10.1685 3.88709 12 5.5V21C10.1685 19.3871 7.79379 18.4966 5.33333 18.5C3.77132 18.5 2.99032 18.5 2.64526 18.2792C2.4381 18.1466 2.35346 18.0619 2.22086 17.8547C2 17.5097 2 16.8941 2 15.6629V6.40322C2 4.97543 2 4.26154 2.54874 3.68286C3.09748 3.10418 3.65923 3.07432 4.78272 3.0146C4.965 3.00491 5.14858 3.00001 5.33333 3.00001Z" />
+‎    <path d="M12 21V5.5C13.8315 3.88709 16.2062 2.99657 18.6667 3.00001C18.8514 3.00001 19.035 3.00491 19.2173 3.0146C20.3408 3.07432 20.9025 3.10418 21.4513 3.68286C22 4.26154 22 4.97543 22 6.40322V11.5" />
+‎    <path d="M21.6887 14.9339L21.0661 14.3113C20.651 13.8962 19.978 13.8962 19.5629 14.3113L16.2141 17.6601C15.769 18.1052 15.4656 18.6722 15.3421 19.2895L15 21L16.7105 20.6579C17.3278 20.5344 17.8948 20.231 18.3399 19.7859L21.6887 16.4371C22.1038 16.022 22.1038 15.349 21.6887 14.9339Z" />
+‎</svg>
+                                </div>
+                                <div>Other</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="expenseCategory" value="rent">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Description *</label>
+                        <input type="text" class="form-input" id="expenseDescription" placeholder="What was this expense for?" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-input" id="expenseDate">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        const SUPABASE_URL = 'https://afyfhpvekuikotdykuql.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmeWZocHZla3Vpa290ZHlrdXFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgxMzE0NzgsImV4cCI6MjA4MzcwNzQ3OH0.L1CV71lO_7EDQzzNSzXknmh8T8xb3b9iItMUd8Ih4Zk';
+        
+        const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        let currentUserId = null;
+        let allExpenses = [];
+
+        async function init() {
+            if (!supabaseClient) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                
+                if (!session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                currentUserId = session.user.id;
+                
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('endDate').value = today;
+                document.getElementById('expenseDate').value = today;
+                
+                const monthStart = new Date();
+                monthStart.setDate(1);
+                document.getElementById('startDate').value = monthStart.toISOString().split('T')[0];
+                
+                await loadExpenses();
+                await calculateFinancials();
+                document.body.classList.add('loaded');
+                
+            } catch (error) {
+                console.error('Auth error:', error);
+                window.location.href = 'login.html';
+            }
+        }
+
+        async function loadExpenses() {
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const category = document.getElementById('filterCategory').value;
+
+                let query = supabaseClient
+                    .from('expenses')
+                    .select('*')
+                    .eq('user_id', currentUserId)
+                    .order('expense_date', { ascending: false })
+                    .order('created_at', { ascending: false });
+
+                if (startDate) {
+                    query = query.gte('expense_date', startDate);
+                }
+                if (endDate) {
+                    query = query.lte('expense_date', endDate);
+                }
+                if (category) {
+                    query = query.eq('category', category);
+                }
+
+                const { data, error } = await query;
+
+                if (error) throw error;
+
+                allExpenses = data || [];
+                renderExpenses(allExpenses);
+                
+            } catch (error) {
+                console.error('Error loading expenses:', error);
+                showAlert('Error loading expenses: ' + error.message, 'error');
+            }
+        }
+
+        function renderExpenses(expenses) {
+            const list = document.getElementById('expensesList');
+            
+            if (expenses.length === 0) {
+                list.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">💸</div>
+                        <h3 class="empty-title">No expenses recorded yet</h3>
+                        <p class="empty-text">Start tracking your business costs!</p>
+                        <button class="btn-primary" onclick="openAddModal()">
+                            <span>➕</span>
+                            <span>Add First Expense</span>
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const categoryIcons = {
+                'rent': '🏠',
+                'utilities': '💡',
+                'inventory': '📦',
+                'salary': '👨‍💼',
+                'marketing': '📢',
+                'other': '📝'
+            };
+
+            list.innerHTML = expenses.map(expense => {
+                const amount = parseFloat(expense.amount || 0);
+                const category = expense.category || 'other';
+                const description = expense.description || 'No description';
+                const expenseDate = new Date(expense.expense_date).toLocaleDateString();
+                const icon = categoryIcons[category] || '📝';
+                
+                return `
+                    <div class="expense-item">
+                        <div class="expense-info">
+                            <span class="expense-category">${icon} ${category.toUpperCase()}</span>
+                            <div class="expense-description">${description}</div>
+                            <div class="expense-meta">
+                                <span>📅 ${expenseDate}</span>
+                            </div>
+                        </div>
+                        <div class="expense-right">
+                            <div class="expense-amount">₦${amount.toLocaleString()}</div>
+                            <div class="expense-actions">
+                                <button class="btn-small btn-delete" onclick="deleteExpense('${expense.id}')">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function calculateFinancials() {
+            try {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+
+                const { data: expenses } = await supabaseClient
+                    .from('expenses')
+                    .select('amount')
+                    .eq('user_id', currentUserId)
+                    .gte('expense_date', startDate)
+                    .lte('expense_date', endDate);
+
+                const totalExpenses = expenses?.reduce((sum, e) => sum + parseFloat(e.amount), 0) || 0;
+                document.getElementById('totalExpenses').textContent = `₦${totalExpenses.toLocaleString()}`;
+
+                const { data: sales } = await supabaseClient
+                    .from('sales')
+                    .select('amount')
+                    .eq('user_id', currentUserId)
+                    .gte('sale_date', startDate)
+                    .lte('sale_date', endDate);
+
+                const totalRevenue = sales?.reduce((sum, s) => sum + parseFloat(s.amount), 0) || 0;
+                document.getElementById('totalRevenue').textContent = `₦${totalRevenue.toLocaleString()}`;
+
+                const netProfit = totalRevenue - totalExpenses;
+                const profitElement = document.getElementById('netProfit');
+                profitElement.textContent = `₦${netProfit.toLocaleString()}`;
+                
+                profitElement.className = 'finance-value';
+                if (netProfit > 0) {
+                    profitElement.classList.add('positive');
+                } else if (netProfit < 0) {
+                    profitElement.classList.add('negative');
+                } else {
+                    profitElement.classList.add('neutral');
+                }
+
+                const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0;
+                document.getElementById('profitMargin').textContent = `${profitMargin}% profit margin`;
+                
+            } catch (error) {
+                console.error('Error calculating financials:', error);
+            }
+        }
+
+        function openAddModal() {
+            document.getElementById('expenseModal').classList.add('show');
+            document.getElementById('expenseForm').reset();
+            selectCategory('rent');
+            document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+        }
+
+        function closeModal() {
+            document.getElementById('expenseModal').classList.remove('show');
+        }
+
+        function selectCategory(category) {
+            document.querySelectorAll('.category-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            document.querySelector(`[data-category="${category}"]`).classList.add('selected');
+            document.getElementById('expenseCategory').value = category;
+        }
+
+        async function handleSubmit(event) {
+            event.preventDefault();
+
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const category = document.getElementById('expenseCategory').value;
+            const description = document.getElementById('expenseDescription').value.trim();
+            const expenseDate = document.getElementById('expenseDate').value;
+
+            if (!amount || amount <= 0) {
+                showAlert('Please enter a valid amount', 'error');
+                return;
+            }
+
+            const expenseData = {
+                user_id: currentUserId,
+                amount: amount,
+                category: category,
+                description: description,
+                expense_date: expenseDate
+            };
+
+            try {
+                const { error } = await supabaseClient
+                    .from('expenses')
+                    .insert([expenseData]);
+
+                if (error) throw error;
+
+                showAlert('Expense recorded successfully!', 'success');
+                closeModal();
+                await loadExpenses();
+                await calculateFinancials();
+                
+            } catch (error) {
+                console.error('Error recording expense:', error);
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function deleteExpense(expenseId) {
+            if (!confirm('Are you sure you want to delete this expense?')) {
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('expenses')
+                    .delete()
+                    .eq('id', expenseId);
+
+                if (error) throw error;
+
+                showAlert('Expense deleted successfully!', 'success');
+                await loadExpenses();
+                await calculateFinancials();
+                
+            } catch (error) {
+                console.error('Error deleting expense:', error);
+                showAlert('Error: ' + error.message, 'error');
+            }
+        }
+
+        async function applyFilters() {
+            await loadExpenses();
+            await calculateFinancials();
+        }
+
+        function showAlert(message, type = 'success') {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type} show`;
+            alertBox.textContent = message;
+            
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+            }, 5000);
+        }
+
+        async function handleLogout() {
+            if (!supabaseClient) return;
+            if (!confirm('Are you sure you want to logout?')) return;
+
+            try {
+                await supabaseClient.auth.signOut();
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-hidden');
+        }
+
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                    sidebar.classList.add('mobile-hidden');
+                }
+            }
+        });
+
+        document.getElementById('expenseModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeModal();
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
